@@ -15,7 +15,7 @@ struct AlternativeAboutView: View {
 
         VStack {
             ContinuousRippleEffectView {
-                Text(verbatim: "Melodic Stamp ")
+                let titlePart = Text(verbatim: "Melodic Stamp ")
                     .fontDesign(.serif)
                     .font(.title)
                     .bold()
@@ -28,9 +28,7 @@ struct AlternativeAboutView: View {
                     .font(.title)
                     .italic()
 
-                    +
-
-                    Text(verbatim: "\nOpen Sourced On GitHub\n")
+                let infoPart = Text(verbatim: "\nOpen Sourced On GitHub\n")
                     .fontDesign(.monospaced)
                     .font(.subheadline)
 
@@ -41,9 +39,7 @@ struct AlternativeAboutView: View {
                     .fontDesign(.monospaced)
                     .font(.subheadline)
 
-                    +
-
-                    Text(verbatim: "Cement")
+                let creditPart = Text(verbatim: "Cement")
                     .font(.custom("SFPro-ExpandedLight", size: 12))
 
                     +
@@ -56,6 +52,8 @@ struct AlternativeAboutView: View {
                     Text(verbatim: "© 2024 → Future")
                     .foregroundStyle(Color.white.opacity(0.45))
                     .font(.custom("SFPro-CompressedLight", size: 12))
+
+                titlePart + infoPart + creditPart
             }
             .padding(.horizontal)
             .padding(.bottom)
