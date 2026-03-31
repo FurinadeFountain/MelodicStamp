@@ -34,7 +34,7 @@ struct MelodicStampApp: App {
         } defaultValue: {
             CreationParameters()
         }
-        .windowResizability(.contentSize)
+        .windowResizability(.automatic)
         .windowToolbarStyle(.unified)
         .windowManagerRole(.principal)
         .handlesExternalEvents(matching: []) // Crucial for handling custom external events in `AppDelegate`

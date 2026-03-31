@@ -31,13 +31,6 @@ struct ContentView: View {
                 maxHeight = nil
             }
         }
-
-        mutating func reset() {
-            minWidth = nil
-            maxWidth = nil
-            minHeight = nil
-            maxHeight = nil
-        }
     }
 
     // MARK: - Environments
@@ -137,10 +130,6 @@ struct ContentView: View {
                     isFocused = true
                     resetFocus(in: namespace)
                     sizer.with(windowStyle: newValue)
-
-                    DispatchQueue.main.async {
-                        sizer.reset()
-                    }
                 }
 
                 // MARK: Updates

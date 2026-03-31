@@ -112,8 +112,7 @@ struct InterfaceView: View {
             .padding(.top, 4)
             .padding(.bottom, -32)
             .ignoresSafeArea()
-            .frame(minWidth: 500, idealWidth: 500)
-            .fixedSize(horizontal: false, vertical: true)
+            .frame(minWidth: 500, maxWidth: 500)
             .background {
                 Group {
                     switch miniPlayerBackgroundStyle {

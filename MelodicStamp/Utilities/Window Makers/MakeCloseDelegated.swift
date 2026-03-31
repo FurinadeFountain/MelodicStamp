@@ -7,50 +7,31 @@
 
 import SwiftUI
 
-struct MakeCloseDelegated: NSViewControllerRepresentable {
+struct MakeCloseDelegated: NSViewRepresentable {
     var shouldClose: Bool = false
     var onClose: (NSWindow, Bool) -> ()
 
-    func makeNSViewController(context: Context) -> NSViewController {
-        let hostingController = CloseDelegatedWindowHostingController(
-            rootView: EmptyView(),
-            parent: self
-        )
-        context.coordinator.hostingController = hostingController
-
-        return hostingController
+    func makeNSView(context: Context) -> CloseDelegatedView {
+        let view = CloseDelegatedView()
+        view.delegate = CloseDelegatedWindowDelegate(parent: self)
+        return view
     }
 
-    func updateNSViewController(_: NSViewController, context: Context) {
-        context.coordinator.hostingController.delegate.parent = self
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
-
-    class Coordinator {
-        var hostingController: CloseDelegatedWindowHostingController<EmptyView>!
+    func updateNSView(_ nsView: CloseDelegatedView, context: Context) {
+        nsView.delegate.parent = self
     }
 }
 
-class CloseDelegatedWindowHostingController<Content: View>: NSHostingController<Content> {
-    var delegate: CloseDelegatedWindowDelegate
+class CloseDelegatedView: NSView {
+    var delegate = CloseDelegatedWindowDelegate(parent: MakeCloseDelegated(onClose: { _, _ in }))
 
-    init(rootView: Content, parent: MakeCloseDelegated) {
-        self.delegate = .init(parent: parent)
-        super.init(rootView: rootView)
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard let window else { return }
+        installDelegate(on: window)
     }
 
-    @available(*, unavailable)
-    @MainActor @preconcurrency dynamic required init?(coder _: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    override func viewWillLayout() {
-        super.viewWillLayout()
-
-        guard let window = view.window else { return }
+    private func installDelegate(on window: NSWindow) {
         if !(window.delegate is CloseDelegatedWindowDelegate) {
             delegate.originalDelegate = window.delegate
             window.delegate = delegate

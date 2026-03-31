@@ -7,39 +7,33 @@
 
 import SwiftUI
 
-struct MakeAlwaysOnTop: NSViewControllerRepresentable {
+struct MakeAlwaysOnTop: NSViewRepresentable {
     @Binding var isAlwaysOnTop: Bool
 
-    func makeNSViewController(context: Context) -> NSViewController {
-        let hostingController = AlwaysOnTopWindowHostingController(rootView: EmptyView())
-        context.coordinator.hostingController = hostingController
-
-        return hostingController
+    func makeNSView(context: Context) -> AlwaysOnTopView {
+        let view = AlwaysOnTopView()
+        view.isAlwaysOnTop = isAlwaysOnTop
+        return view
     }
 
-    func updateNSViewController(_: NSViewController, context: Context) {
-        if let hostingController = context.coordinator.hostingController {
-            hostingController.isAlwaysOnTop = isAlwaysOnTop
+    func updateNSView(_ nsView: AlwaysOnTopView, context: Context) {
+        nsView.isAlwaysOnTop = isAlwaysOnTop
+        if let window = nsView.window {
+            nsView.applyAlwaysOnTop(to: window)
         }
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
-
-    class Coordinator {
-        var hostingController: AlwaysOnTopWindowHostingController<EmptyView>!
     }
 }
 
-class AlwaysOnTopWindowHostingController<Content: View>: NSHostingController<Content> {
+class AlwaysOnTopView: NSView {
     var isAlwaysOnTop: Bool = true
 
-    override func viewWillLayout() {
-        super.viewWillLayout()
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard let window else { return }
+        applyAlwaysOnTop(to: window)
+    }
 
-        guard let window = view.window else { return }
-
+    func applyAlwaysOnTop(to window: NSWindow) {
         window.level = isAlwaysOnTop ? .floating : .normal
 
         if isAlwaysOnTop {
