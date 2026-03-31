@@ -17,24 +17,20 @@ class RealtimeAnalyzer {
     public var startFrequency: Float = 80 // Initial frequency
     public var endFrequency: Float = 18000 // Cutoff frequency
 
-    @MainActor
-    private lazy var bands: [(lowerFrequency: Float, upperFrequency: Float)] = {
+    private let bands: [(lowerFrequency: Float, upperFrequency: Float)]
+
+    private static func generateBands(startFrequency: Float, endFrequency: Float, frequencyBands: Int) -> [(lowerFrequency: Float, upperFrequency: Float)] {
         var bands = [(lowerFrequency: Float, upperFrequency: Float)]()
-
-        // 1: Determine the growth factor according to the start and end spectrum and the number of frequency bands: 2^n
-
         let n = log2(endFrequency / startFrequency) / Float(frequencyBands)
         var nextBand: (lowerFrequency: Float, upperFrequency: Float) = (startFrequency, 0)
-        for i in 1...frequencyBands {
-            // 2: The upper frequency point of a frequency band is 2^n times the lower frequency point
-
+        for i in 1 ... frequencyBands {
             let highFrequency = nextBand.lowerFrequency * powf(2, n)
             nextBand.upperFrequency = i == frequencyBands ? endFrequency : highFrequency
             bands.append(nextBand)
             nextBand.lowerFrequency = highFrequency
         }
         return bands
-    }()
+    }
 
     private var spectrumBuffer = [[Float]]()
     public var spectrumSmooth: Float = 0.5 {
@@ -46,12 +42,13 @@ class RealtimeAnalyzer {
 
     init(fftSize: Int) {
         self.fftSize = fftSize
+        self.bands = Self.generateBands(startFrequency: startFrequency, endFrequency: endFrequency, frequencyBands: frequencyBands)
     }
 
     @MainActor
     func analyze(with buffer: AVAudioPCMBuffer) -> [[Float]] {
         let channelsAmplitudes = fft(buffer)
-        let aWeights = createFrequencyWeights()
+        let aWeights = createFrequencyWeights(sampleRate: Float(buffer.format.sampleRate))
         if spectrumBuffer.isEmpty {
             for _ in 0 ..< channelsAmplitudes.count {
                 spectrumBuffer.append([Float](repeating: 0, count: bands.count))
@@ -145,8 +142,8 @@ class RealtimeAnalyzer {
         return amplitudes[startIndex...endIndex].max()!
     }
 
-    private func createFrequencyWeights() -> [Float] {
-        let Δf = 44100.0 / Float(fftSize)
+    private func createFrequencyWeights(sampleRate: Float) -> [Float] {
+        let Δf = sampleRate / Float(fftSize)
         let bins = fftSize / 2
 
         var f: [Float] = (0 ..< bins).map { Float($0) * Δf }

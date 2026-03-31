@@ -12,7 +12,10 @@ enum FileHelper {}
 
 extension FileHelper {
     static func flatten(contentsOf folderURL: URL, allowedContentTypes: Set<UTType> = allowedContentTypes, isRecursive: Bool = true) -> [URL] {
-        guard folderURL.canAccessSecurityScopedResourceOrIsReachable() else { return [] }
+        let didStartAccess = folderURL.startAccessingSecurityScopedResource()
+        defer { if didStartAccess { folderURL.stopAccessingSecurityScopedResource() } }
+
+        guard folderURL.isReachable || didStartAccess else { return [] }
         guard folderURL.hasDirectoryPath else { return [folderURL] }
 
         guard let contents = try? FileManager.default.contentsOfDirectory(
@@ -22,7 +25,7 @@ extension FileHelper {
         ) else { return [] }
 
         return contents.flatMap { url in
-            guard url.isFileURL else {
+            if url.hasDirectoryPath, isRecursive {
                 return flatten(contentsOf: url, allowedContentTypes: allowedContentTypes, isRecursive: isRecursive)
             }
 

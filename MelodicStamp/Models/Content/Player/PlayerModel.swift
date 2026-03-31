@@ -9,6 +9,7 @@ import Accelerate
 import CAAudioHardware
 import Combine
 import Defaults
+import MediaPlayer
 import os.log
 import SFBAudioEngine
 import SwiftUI
@@ -190,7 +191,8 @@ extension PlayerModel {
 
         timer
             .receive(on: DispatchQueue.main)
-            .sink { _ in
+            .sink { [weak self] _ in
+                guard let self else { return }
                 self.updateRunning()
                 self.updatePlaying()
                 self.updatePlaybackState()
@@ -201,6 +203,20 @@ extension PlayerModel {
                 self.updateOutputDevices()
             }
             .store(in: &cancellables)
+    }
+
+    deinit {
+        let commandCenter = MPRemoteCommandCenter.shared()
+        commandCenter.playCommand.removeTarget(nil)
+        commandCenter.pauseCommand.removeTarget(nil)
+        commandCenter.togglePlayPauseCommand.removeTarget(nil)
+        commandCenter.skipForwardCommand.removeTarget(nil)
+        commandCenter.skipBackwardCommand.removeTarget(nil)
+        commandCenter.changePlaybackPositionCommand.removeTarget(nil)
+        commandCenter.nextTrackCommand.removeTarget(nil)
+        commandCenter.previousTrackCommand.removeTarget(nil)
+
+        cancellables.removeAll()
     }
 }
 
@@ -326,14 +342,15 @@ extension PlayerModel {
             inputNode.removeTap(onBus: bus)
 
             inputNode.installTap(onBus: bus, bufferSize: AVAudioFrameCount(PlayerModel.bufferSize), format: format) { [weak self] buffer, _ in
-                guard let strongSelf = self else { return }
-                if !strongSelf.player.isPlaying { return }
+                guard let self else { return }
 
                 buffer.frameLength = AVAudioFrameCount(Self.bufferSize)
 
-                Task { @MainActor in
-                    let spectra = strongSelf.analyze(with: buffer)
-                    strongSelf.visualizationDataSubject.send(spectra)
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    guard self.player.isPlaying else { return }
+                    let spectra = self.analyze(with: buffer)
+                    self.visualizationDataSubject.send(spectra)
                 }
             }
         }

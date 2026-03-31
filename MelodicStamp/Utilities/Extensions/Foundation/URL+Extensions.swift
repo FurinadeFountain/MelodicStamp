@@ -20,9 +20,8 @@ extension URL {
 }
 
 extension URL {
-    func canAccessSecurityScopedResourceOrIsReachable() -> Bool {
-        let isReachable = (try? checkResourceIsReachable()) ?? false
-        return startAccessingSecurityScopedResource() || isReachable
+    var isReachable: Bool {
+        (try? checkResourceIsReachable()) ?? false
     }
 
     subscript(attribute key: FileAttributeKey) -> Any? {

@@ -47,7 +47,9 @@ enum FileAdderPresentationStyle {
     }
 
     func open(url: URL, openWindow: OpenWindowAction) {
-        guard url.canAccessSecurityScopedResourceOrIsReachable() else { return }
+        let didStartAccess = url.startAccessingSecurityScopedResource()
+        defer { if didStartAccess { url.stopAccessingSecurityScopedResource() } }
+        guard url.isReachable || didStartAccess else { return }
 
         Task { @MainActor in
             switch fileOpenerPresentationStyle {

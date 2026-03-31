@@ -66,54 +66,28 @@ extension MetadataEditorProtocol {
     }
 
     func updateAll(completion: (() -> ())? = nil) {
-        var pending: Set<URL> = Set(metadataSet.map(\.url))
-        for metadata in metadataSet {
-            Task.detached {
-                do {
-                    try await metadata.update {
-                        pending.remove(metadata.url)
+        Task {
+            await withTaskGroup(of: Void.self) { group in
+                for metadata in metadataSet {
+                    group.addTask {
+                        try? await metadata.update()
                     }
-                } catch {
-                    pending.remove(metadata.url)
                 }
             }
-        }
-
-        if let completion {
-            Task.detached {
-                var iteration = 0
-                repeat {
-                    try await Task.sleep(for: .milliseconds(100))
-                    iteration += 1
-                } while !pending.isEmpty && iteration < 100
-                completion()
-            }
+            await MainActor.run { completion?() }
         }
     }
 
     func writeAll(completion: (() -> ())? = nil) {
-        var pending: Set<URL> = Set(metadataSet.map(\.url))
-        for metadata in metadataSet {
-            Task.detached {
-                do {
-                    try await metadata.write {
-                        pending.remove(metadata.url)
+        Task {
+            await withTaskGroup(of: Void.self) { group in
+                for metadata in metadataSet {
+                    group.addTask {
+                        try? await metadata.write()
                     }
-                } catch {
-                    pending.remove(metadata.url)
                 }
             }
-        }
-
-        if let completion {
-            Task.detached {
-                var iteration = 0
-                repeat {
-                    try await Task.sleep(for: .milliseconds(100))
-                    iteration += 1
-                } while !pending.isEmpty && iteration < 100
-                completion()
-            }
+            await MainActor.run { completion?() }
         }
     }
 }

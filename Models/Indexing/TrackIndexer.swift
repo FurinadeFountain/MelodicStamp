@@ -35,6 +35,7 @@ extension TrackIndexer {
                     let track = await Track(loadingFrom: trackURL(for: element))
                     continuation.yield((index, track))
                 }
+                continuation.finish()
             }
         }
     }

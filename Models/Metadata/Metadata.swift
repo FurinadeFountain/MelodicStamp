@@ -567,9 +567,8 @@ extension Metadata {
 
         await updateState(to: .fine)
         await apply()
-        completion?()
-
         await generateThumbnail()
+        completion?()
     }
 
     nonisolated func write(completion: (() -> ())? = nil) async throws(MetadataError) {
@@ -589,12 +588,13 @@ extension Metadata {
         }
 
         await updateState(to: .saving)
-        await apply()
 
         logger.info("Started writing metadata to \(self.url)")
 
         try await overwrite()
 
+        // Only apply after successful write
+        await apply()
         await updateState(to: .fine)
         completion?()
 
@@ -640,6 +640,9 @@ extension Metadata {
         var entry: MetadataBatchEditingEntry<V>?
         repeat {
             entry = self[extracting: keyPath]
+            if entry == nil {
+                try? await Task.sleep(for: .milliseconds(50))
+            }
         } while entry == nil
 
         logger.info("Succeed polling metadata for \("\(keyPath)")")
